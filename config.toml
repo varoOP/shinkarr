@@ -1,0 +1,19 @@
+[sonarr]
+Host = "localhost"
+Port = 8989
+BaseUrl = "baseURL"
+TLS = false
+ApiKey = "API-KEY"
+RootFolderPath = "/path/to/root-folder"
+SeasonFolder = true
+Monitored = true
+MonitorType = "all"
+QualityProfileID = 0
+
+[autobrr]
+Host = "localhost"
+Port = 7474
+BaseUrl = "baseURL"
+TLS = false
+ApiKey = "API-KEY"
+FilterID = 0
