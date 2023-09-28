@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"strings"
 
-	"github.com/autobrr/omegabrr/pkg/autobrr"
 	"github.com/mitchellh/go-homedir"
 	"github.com/nstratos/go-myanimelist/mal"
 	"github.com/spf13/pflag"
@@ -30,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pflag.StringVar(&dbPath, "shinkuro-db", filepath.Join(d, ".config/shinkuro/shinkuro.db"), "path to shinkuro.db")
+	pflag.StringVar(&dbPath, "shinkro-db", filepath.Join(d, ".config/shinkro/shinkro.db"), "path to shinkro.db")
 	pflag.StringVar(&configPath, "config", filepath.Join(d, ".config/malbrr"), "path to malbrr configuration directory")
 	pflag.IntVar(&seasonYear, "season-year", 0, "season year of anime")
 	pflag.StringVar(&season, "season", "", "season of anime")
@@ -53,6 +51,7 @@ func main() {
 		mal.Fields{
 			"alternative_titles{en}",
 			"my_list_status{status}",
+			"media_type",
 		},
 		mal.NSFW(true),
 		mal.Limit(500),
@@ -62,49 +61,71 @@ func main() {
 		log.Fatal(err)
 	}
 
-	aa := []mal.Anime{}
-	malIds := []int{}
+	//aa := []mal.Anime{}
+	malIdsSeries := []int32{}
+	malIdsMovies := []int32{}
 	for _, anime := range a {
 		if anime.MyListStatus.Status == mal.AnimeStatusPlanToWatch || anime.MyListStatus.Status == mal.AnimeStatusWatching {
-			aa = append(aa, anime)
-			malIds = append(malIds, anime.ID)
+			//		aa = append(aa, anime)
+			if anime.MediaType == "movie" {
+				malIdsMovies = append(malIdsMovies, int32(anime.ID))
+				continue
+			}
+
+			malIdsSeries = append(malIdsSeries, int32(anime.ID))
 		}
 	}
+	fmt.Println("Total number of anime series we wish to add: ", len(malIdsSeries))
 
-	anime, err := db.GetTvdbID(malIds)
+	animeTv, err := db.GetIDs(malIdsSeries, "tvdb")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.GetIDs(malIdsMovies, "tmdb")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := sonarr.NewClient(cfg)
-	for title, id := range anime {
-		err := s.AddSeries(title, id)
-		if err != nil {
-			log.Printf("unable to add %v\n%v\n", title, err)
-			continue
-		}
-
-		log.Println("added", title)
-	}
-
-	var shows []string
-	for _, anime := range aa {
-		if anime.AlternativeTitles.En != "" {
-			shows = append(shows, "*"+anime.AlternativeTitles.En+"*")
-		} else {
-			shows = append(shows, "*"+anime.Title+"*")
-		}
-	}
-
-	f := autobrr.UpdateFilter{
-		Shows: strings.Join(shows, ","),
-	}
-
-	ac := autobrr.NewClient(cfg.AutobrrUrl.String(), cfg.K.MustString("autobrr.ApiKey"))
-	err = ac.UpdateFilterByID(context.Background(), cfg.K.MustInt("autobrr.FilterID"), f)
+	tag := fmt.Sprintf("%v-%v", season, seasonYear)
+	tagExists, tagId, err := s.TagExists(tag)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(shows)
+	if !tagExists {
+		tagId, err = s.AddTag(tag)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	seriesAdded := []string{}
+	seriesNotAdded := []string{}
+
+	for title, id := range animeTv {
+		err := s.AddSeries(title, id, []int32{tagId})
+		if err != nil {
+			seriesNotAdded = append(seriesNotAdded, fmt.Sprintf("%v\nerror:%v\n", title, err))
+			continue
+		}
+
+		seriesAdded = append(seriesAdded, title)
+	}
+
+	if len(seriesAdded) > 0 {
+		fmt.Printf("\nFollowing series added (%v):\n", len(seriesAdded))
+		for _, v := range seriesAdded {
+			fmt.Println(v)
+		}
+	}
+
+	if len(seriesNotAdded) > 0 {
+		fmt.Printf("\nFollowing series not added (%v):\n", len(seriesNotAdded))
+		for _, v := range seriesNotAdded {
+			fmt.Println(v)
+		}
+	}
+
 }

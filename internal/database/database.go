@@ -2,7 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -45,41 +47,70 @@ func (db *DB) GetMalCreds() map[string]string {
 	}
 }
 
-func (db *DB) GetTvdbID(malid []int) (map[string]int, error) {
-	var notFound []int
-	m := map[string]int{}
-	sqlstmt := "SELECT title,tvdb_id from anime where mal_id=?"
+func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
+	var (
+		notFound []string
+		// found    []string
+	)
+
+	m := map[string]int32{}
+	sqlstmt := fmt.Sprintf("SELECT title,%v_id from anime where mal_id=?", dbtype)
 	tx, err := db.Handler.Begin()
 	if err != nil {
 		return nil, err
 	}
 
 	defer tx.Rollback()
-	for _, id := range malid {
+	for _, malid := range malids {
 		var (
-			tvdbId int
-			title  string
+			id    int32
+			title string
 		)
 
-		row := tx.QueryRow(sqlstmt, id)
-		err := row.Scan(&title, &tvdbId)
+		row := tx.QueryRow(sqlstmt, malid)
+		err := row.Scan(&title, &id)
 		if err != nil {
 			return nil, err
 		}
 
-		if tvdbId == 0 {
-			notFound = append(notFound, id)
-			continue
-		}
+		titleLink := fmt.Sprintf("%v (https://myanimelist.net/anime/%v)", title, malid)
+		if id <= 0 {
+			s, a, err := NewAnimeMaps()
+			if err != nil {
+				return nil, err
+			}
 
-		m[title] = tvdbId
+			if dbtype == "tvdb" {
+				id = int32(s.CheckMap(int(malid)))
+			}
+
+			if dbtype == "tmdb" {
+				id = int32(a.CheckMap(int(malid)))
+			}
+
+			if id <= 0 {
+				notFound = append(notFound, fmt.Sprintf("Title: %v\nLink: https://myanimelist.net/anime/%v\n", title, malid))
+				continue
+			}
+		}
+		// found = append(found, title)
+		m[titleLink] = id
 	}
 
+	// if len(found) > 0 {
+	// 	log.Printf("%vids for the following anime were found:\n%v", dbtype, strings.Join(found, "\n"))
+	// }
+
 	if len(notFound) > 0 {
-		log.Println("tvdbIds for the following malIds were not found:", notFound)
+		fmt.Printf("\n%vids for the following anime were not found (Total: %v):\n%v", dbtype, len(notFound), strings.Join(notFound, "\n"))
+		fmt.Println()
 	}
 
 	tx.Commit()
+	if dbtype == "tvdb" {
+		fmt.Printf("Total number of anime series that can be added: %v\n", len(malids)-len(notFound))
+	}
+
 	return m, nil
 }
 

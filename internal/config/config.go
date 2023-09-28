@@ -12,9 +12,38 @@ import (
 )
 
 type Config struct {
-	SonarrUrl  url.URL
-	AutobrrUrl url.URL
-	K          *koanf.Koanf
+	Sonarr *SonarrConfig
+	Radarr *RadarrConfig
+}
+
+type SonarrConfig struct {
+	Url              *url.URL
+	Host             string `koanf:"Host"`
+	Port             int    `koanf:"Port"`
+	BaseUrl          string `koanf:"BaseUrl"`
+	TLS              bool   `koanf:"TLS"`
+	ApiKey           string `koanf:"ApiKey"`
+	RootFolderPath   string `koanf:"RootFolderPath"`
+	SeasonFolder     bool   `koanf:"SeasonFolder"`
+	Monitored        bool   `koanf:"Monitored"`
+	MonitorType      string `koanf:"MonitorType"`
+	QualityProfileID int32    `koanf:"QualityProfileID"`
+}
+
+type RadarrConfig struct {
+	Url                 *url.URL
+	Host                string `koanf:"Host"`
+	Port                int    `koanf:"Port"`
+	BaseUrl             string `koanf:"BaseUrl"`
+	TLS                 bool   `koanf:"TLS"`
+	ApiKey              string `koanf:"ApiKey"`
+	RootFolderPath      string `koanf:"RootFolderPath"`
+	Monitored           bool   `koanf:"Monitored"`
+	MonitorType         string `koanf:"MonitorType"`
+	SearchForMovie      bool   `koanf:"SearchForMovie"`
+	AddMethod           string `koanf:"AddMethod"`
+	MinimumAvailability string `konaf:"MinimumAvailability"`
+	QualityProfileID    int    `koanf:"QualityProfileID"`
 }
 
 func NewConfig(dir string) *Config {
@@ -28,33 +57,43 @@ func NewConfig(dir string) *Config {
 		log.Fatal(err)
 	}
 
-	c := &Config{
-		K: k,
-	}
+	s := SonarrConfig{}
+	r := RadarrConfig{}
+	k.Unmarshal("sonarr", &s)
+	k.Unmarshal("radarr", &r)
+	s.BuildUrl()
+	r.BuildUrl()
 
-	targets := []string{"sonarr", "autobrr"}
-	for _, target := range targets {
-		c.buildUrl(target, k)
+	return &Config{
+		Sonarr: &s,
+		Radarr: &r,
 	}
-
-	return c
 }
 
-func (c *Config) buildUrl(target string, k *koanf.Koanf) {
-	var url url.URL
-	if k.Bool(target + ".TLS") {
-		url.Scheme = "https"
-	} else {
-		url.Scheme = "http"
+func (s *SonarrConfig) BuildUrl() {
+	scheme := "http"
+	if s.TLS {
+		scheme = "https"
 	}
 
-	url.Host = k.MustString(target+".Host") + ":" + strconv.Itoa(k.MustInt(target+".Port"))
-	url = *url.JoinPath(k.String(target + ".BaseUrl"))
-	if target == "sonarr" {
-		c.SonarrUrl = url
+	url := url.URL{
+		Scheme: scheme,
+		Host:   s.Host + ":" + strconv.Itoa(s.Port),
 	}
 
-	if target == "autobrr" {
-		c.AutobrrUrl = url
+	s.Url = url.JoinPath(s.BaseUrl)
+}
+
+func (r *RadarrConfig) BuildUrl() {
+	scheme := "http"
+	if r.TLS {
+		scheme = "https"
 	}
+
+	url := url.URL{
+		Scheme: scheme,
+		Host:   r.Host + ":" + strconv.Itoa(r.Port),
+	}
+
+	r.Url = url.JoinPath(r.BaseUrl)
 }
