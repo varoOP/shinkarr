@@ -27,7 +27,7 @@ type SonarrConfig struct {
 	SeasonFolder     bool   `koanf:"SeasonFolder"`
 	Monitored        bool   `koanf:"Monitored"`
 	MonitorType      string `koanf:"MonitorType"`
-	QualityProfileID int32    `koanf:"QualityProfileID"`
+	QualityProfileID int32  `koanf:"QualityProfileID"`
 }
 
 type RadarrConfig struct {
@@ -41,9 +41,8 @@ type RadarrConfig struct {
 	Monitored           bool   `koanf:"Monitored"`
 	MonitorType         string `koanf:"MonitorType"`
 	SearchForMovie      bool   `koanf:"SearchForMovie"`
-	AddMethod           string `koanf:"AddMethod"`
 	MinimumAvailability string `konaf:"MinimumAvailability"`
-	QualityProfileID    int    `koanf:"QualityProfileID"`
+	QualityProfileID    int32  `koanf:"QualityProfileID"`
 }
 
 func NewConfig(dir string) *Config {

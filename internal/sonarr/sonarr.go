@@ -118,7 +118,7 @@ const (
 
 type SonarrErrorMessage string
 
-const SonarrErrorMessageSeriesAlreadyAdded = "This series has already been added"
+const SonarrErrorMessageSeriesAlreadyAdded SonarrErrorMessage = "This series has already been added"
 
 type SonarrError struct {
 	PropertyName                      string `json:"propertyName"`
@@ -228,7 +228,7 @@ func (c *Client) AddSeries(title string, tvdbid int32, tags []int32) error {
 	}
 
 	if se != nil {
-		if se.ErrorMessage == SonarrErrorMessageSeriesAlreadyAdded {
+		if se.ErrorMessage == string(SonarrErrorMessageSeriesAlreadyAdded) {
 			ss, err := c.GetSeries(s.TvdbId)
 			if err != nil {
 				return err

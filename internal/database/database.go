@@ -108,7 +108,11 @@ func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
 
 	tx.Commit()
 	if dbtype == "tvdb" {
-		fmt.Printf("Total number of anime series that can be added: %v\n", len(malids)-len(notFound))
+		fmt.Printf("\nTotal number of anime series that can be added: %v\n", len(malids)-len(notFound))
+	}
+
+	if dbtype == "tmdb" {
+		fmt.Printf("Total number of anime movies that can be added: %v\n", len(malids)-len(notFound))
 	}
 
 	return m, nil

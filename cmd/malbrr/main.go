@@ -12,6 +12,7 @@ import (
 	"github.com/varoOP/malbrr/internal/config"
 	"github.com/varoOP/malbrr/internal/database"
 	"github.com/varoOP/malbrr/internal/maloauth"
+	"github.com/varoOP/malbrr/internal/radarr"
 	"github.com/varoOP/malbrr/internal/sonarr"
 )
 
@@ -76,13 +77,14 @@ func main() {
 		}
 	}
 	fmt.Println("Total number of anime series we wish to add: ", len(malIdsSeries))
+	fmt.Println("Total number of anime movies we wish to add: ", len(malIdsMovies))
 
 	animeTv, err := db.GetIDs(malIdsSeries, "tvdb")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = db.GetIDs(malIdsMovies, "tmdb")
+	animeMovie, err := db.GetIDs(malIdsMovies, "tmdb")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,6 +126,47 @@ func main() {
 	if len(seriesNotAdded) > 0 {
 		fmt.Printf("\nFollowing series not added (%v):\n", len(seriesNotAdded))
 		for _, v := range seriesNotAdded {
+			fmt.Println(v)
+		}
+	}
+
+	m := radarr.NewClient(cfg)
+	tag = fmt.Sprintf("%v-%v", season, seasonYear)
+	tagExists, tagId, err = m.TagExists(tag)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !tagExists {
+		tagId, err = m.AddTag(tag)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	moviesAdded := []string{}
+	moviesNotAdded := []string{}
+
+	for title, id := range animeMovie {
+		err := m.AddMovie(title, id, []int32{tagId})
+		if err != nil {
+			moviesNotAdded = append(moviesNotAdded, fmt.Sprintf("%v\nerror:%v\n", title, err))
+			continue
+		}
+
+		moviesAdded = append(moviesAdded, title)
+	}
+
+	if len(moviesAdded) > 0 {
+		fmt.Printf("\nFollowing movies added (%v):\n", len(moviesAdded))
+		for _, v := range moviesAdded {
+			fmt.Println(v)
+		}
+	}
+
+	if len(moviesNotAdded) > 0 {
+		fmt.Printf("\nFollowing movies not added (%v):\n", len(moviesNotAdded))
+		for _, v := range moviesNotAdded {
 			fmt.Println(v)
 		}
 	}
