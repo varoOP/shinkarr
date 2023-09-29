@@ -1,4 +1,4 @@
-module github.com/varoOP/malbrr
+module github.com/varoOP/shinkarr
 
 go 1.20
 

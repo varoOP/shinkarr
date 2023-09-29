@@ -9,11 +9,11 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/nstratos/go-myanimelist/mal"
 	"github.com/spf13/pflag"
-	"github.com/varoOP/malbrr/internal/config"
-	"github.com/varoOP/malbrr/internal/database"
-	"github.com/varoOP/malbrr/internal/maloauth"
-	"github.com/varoOP/malbrr/internal/radarr"
-	"github.com/varoOP/malbrr/internal/sonarr"
+	"github.com/varoOP/shinkarr/internal/config"
+	"github.com/varoOP/shinkarr/internal/database"
+	"github.com/varoOP/shinkarr/internal/maloauth"
+	"github.com/varoOP/shinkarr/internal/radarr"
+	"github.com/varoOP/shinkarr/internal/sonarr"
 )
 
 func main() {

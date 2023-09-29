@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/varoOP/malbrr/internal/database"
+	"github.com/varoOP/shinkarr/internal/database"
 	"golang.org/x/oauth2"
 )
 

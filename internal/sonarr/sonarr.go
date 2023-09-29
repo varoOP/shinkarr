@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/varoOP/malbrr/internal/config"
+	"github.com/varoOP/shinkarr/internal/config"
 )
 
 type AddSeriesOptions struct {
