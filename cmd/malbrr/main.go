@@ -30,7 +30,7 @@ func main() {
 	}
 
 	pflag.StringVar(&dbPath, "shinkro-db", filepath.Join(d, ".config/shinkro/shinkro.db"), "path to shinkro.db")
-	pflag.StringVar(&configPath, "config", filepath.Join(d, ".config/malbrr"), "path to malbrr configuration directory")
+	pflag.StringVar(&configPath, "config", filepath.Join(d, ".config/shinkarr"), "path to shinkarr configuration directory")
 	pflag.IntVar(&seasonYear, "season-year", 0, "season year of anime")
 	pflag.StringVar(&season, "season", "", "season of anime")
 	pflag.Parse()
