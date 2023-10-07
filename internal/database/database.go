@@ -32,7 +32,7 @@ func (db *DB) GetMalCreds() map[string]string {
 		access_token  string
 	)
 
-	sqlstmt := "SELECT * from malauth;"
+	sqlstmt := "SELECT client_id, client_secret, access_token from malauth;"
 
 	row := db.Handler.QueryRow(sqlstmt)
 	err := row.Scan(&client_id, &client_secret, &access_token)
