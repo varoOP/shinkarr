@@ -211,7 +211,7 @@ func (c *Client) AddSeries(title string, tvdbid int32, tags []int32) error {
 			IgnoreEpisodesWithFiles:      false,
 			IgnoreEpisodesWithoutFiles:   false,
 			Monitor:                      MonitorTypes(c.config.Sonarr.MonitorType),
-			SearchForMissingEpisodes:     true,
+			SearchForMissingEpisodes:     false,
 			SearchForCutoffUnmetEpisodes: false,
 		},
 		Tags: tags,
