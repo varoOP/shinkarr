@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
@@ -108,4 +109,31 @@ func (r *RadarrConfig) BuildUrl() {
 	}
 
 	r.Url = url.JoinPath(r.BaseUrl)
+}
+
+func DetectSeasonYear() (string, int) {
+	var (
+		season     string
+		seasonYear int
+	)
+	now := time.Now()
+	month := now.Month()
+	year := now.Year()
+
+	switch month {
+	case time.January, time.February, time.March:
+		season = "winter"
+	case time.April, time.May, time.June:
+		season = "spring"
+	case time.July, time.August:
+		season = "summer"
+	case time.September, time.October, time.November, time.December:
+		season = "fall"
+	default:
+		season = "unknown"
+	}
+
+	seasonYear = year
+
+	return season, seasonYear
 }

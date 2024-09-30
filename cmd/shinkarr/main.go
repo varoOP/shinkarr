@@ -35,10 +35,11 @@ func main() {
 	pflag.Parse()
 
 	if seasonYear == 0 || season == "" {
-		log.Fatal("season-year or season not provided")
+		log.Print("Season and SeasonYear not provided, detecting current season")
 	}
 
 	cfg := config.NewConfig(configPath)
+	season, seasonYear = config.DetectSeasonYear()
 	dsn := cfg.Shinkro.DBPath + "?_pragma=busy_timeout%3d1000"
 	db := database.NewDB(dsn)
 	oc := maloauth.NewOauth2Client(db)
