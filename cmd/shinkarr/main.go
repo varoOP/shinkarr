@@ -34,13 +34,13 @@ func main() {
 	pflag.StringVar(&season, "season", "", "season of anime")
 	pflag.Parse()
 
+	cfg := config.NewConfig(configPath)
 	if seasonYear == 0 || season == "" {
 		log.Println("Season and SeasonYear not provided, detecting current season")
+		season, seasonYear = config.DetectSeasonYear()
+		log.Printf("Current season: %v-%v\n", season, seasonYear)
 	}
 
-	cfg := config.NewConfig(configPath)
-	season, seasonYear = config.DetectSeasonYear()
-	log.Printf("Current season: %v-%v\n", season, seasonYear)
 	dsn := cfg.Shinkro.DBPath + "?_pragma=busy_timeout%3d1000"
 	db := database.NewDB(dsn)
 	oc := maloauth.NewOauth2Client(db)
