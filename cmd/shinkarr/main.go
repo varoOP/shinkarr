@@ -12,6 +12,7 @@ import (
 	"github.com/varoOP/shinkarr/internal/config"
 	"github.com/varoOP/shinkarr/internal/database"
 	"github.com/varoOP/shinkarr/internal/maloauth"
+	"github.com/varoOP/shinkarr/internal/omegabrr"
 	"github.com/varoOP/shinkarr/internal/radarr"
 	"github.com/varoOP/shinkarr/internal/sonarr"
 )
@@ -19,7 +20,6 @@ import (
 func main() {
 	var (
 		configPath string
-		dbPath     string
 		seasonYear int
 		season     string
 	)
@@ -29,7 +29,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pflag.StringVar(&dbPath, "shinkro-db", filepath.Join(d, ".config/shinkro/shinkro.db"), "path to shinkro.db")
 	pflag.StringVar(&configPath, "config", filepath.Join(d, ".config/shinkarr"), "path to shinkarr configuration directory")
 	pflag.IntVar(&seasonYear, "season-year", 0, "season year of anime")
 	pflag.StringVar(&season, "season", "", "season of anime")
@@ -39,9 +38,9 @@ func main() {
 		log.Fatal("season-year or season not provided")
 	}
 
-	dsn := dbPath + "?_pragma=busy_timeout%3d1000"
-	db := database.NewDB(dsn)
 	cfg := config.NewConfig(configPath)
+	dsn := cfg.Shinkro.DBPath + "?_pragma=busy_timeout%3d1000"
+	db := database.NewDB(dsn)
 	oc := maloauth.NewOauth2Client(db)
 	c := mal.NewClient(oc)
 
@@ -171,4 +170,10 @@ func main() {
 		}
 	}
 
+	fmt.Println("Running omegabrr:")
+	om := omegabrr.NewOmegabrr(cfg.Omegabrr.ConfigPath, cfg.Omegabrr.ExecPath, season, seasonYear)
+	err = om.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

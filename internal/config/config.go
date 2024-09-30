@@ -9,11 +9,18 @@ import (
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
+	"github.com/varoOP/shinkarr/internal/omegabrr"
 )
 
 type Config struct {
-	Sonarr *SonarrConfig
-	Radarr *RadarrConfig
+	Sonarr   *SonarrConfig
+	Radarr   *RadarrConfig
+	Omegabrr *omegabrr.Omegabrr
+	Shinkro *ShinkroConfig
+}
+
+type ShinkroConfig struct {
+	DBPath string `koanf:"DBPath"`
 }
 
 type SonarrConfig struct {
@@ -58,8 +65,12 @@ func NewConfig(dir string) *Config {
 
 	s := SonarrConfig{}
 	r := RadarrConfig{}
+	sh := ShinkroConfig{}
+	om := omegabrr.Omegabrr{}
 	k.Unmarshal("sonarr", &s)
 	k.Unmarshal("radarr", &r)
+	k.Unmarshal("shinkro", &sh)
+	k.Unmarshal("omegabrr", &om)
 	s.BuildUrl()
 	r.BuildUrl()
 
