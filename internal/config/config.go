@@ -16,7 +16,7 @@ type Config struct {
 	Sonarr   *SonarrConfig
 	Radarr   *RadarrConfig
 	Omegabrr *omegabrr.Omegabrr
-	Shinkro *ShinkroConfig
+	Shinkro  *ShinkroConfig
 }
 
 type ShinkroConfig struct {
@@ -75,8 +75,10 @@ func NewConfig(dir string) *Config {
 	r.BuildUrl()
 
 	return &Config{
-		Sonarr: &s,
-		Radarr: &r,
+		Sonarr:   &s,
+		Radarr:   &r,
+		Shinkro:  &sh,
+		Omegabrr: &om,
 	}
 }
 
