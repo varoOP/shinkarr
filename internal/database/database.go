@@ -55,25 +55,41 @@ func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
 
 	m := map[string]int32{}
 	sqlstmt := fmt.Sprintf("SELECT title,%v_id from anime where mal_id=?", dbtype)
+	
 	tx, err := db.Handler.Begin()
 	if err != nil {
 		return nil, err
 	}
 
 	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(sqlstmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer stmt.Close()
+
 	for _, malid := range malids {
 		var (
 			id    int32
 			title string
 		)
 
-		row := tx.QueryRow(sqlstmt, malid)
+		row := stmt.QueryRow(malid)
 		err := row.Scan(&title, &id)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				notFound = append(notFound, fmt.Sprintf("Title: %v\nLink: https://myanimelist.net/anime/%v\n", "No Title", malid))
+				continue
+			}
 			return nil, err
 		}
 
 		titleLink := fmt.Sprintf("%v (https://myanimelist.net/anime/%v)", title, malid)
+		if id > 0 {
+			log.Printf("%v's tvdbid found in db: %v\n", malid, id)
+		}
 		if id <= 0 {
 			s, a, err := NewAnimeMaps()
 			if err != nil {
