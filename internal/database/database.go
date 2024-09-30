@@ -87,9 +87,9 @@ func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
 		}
 
 		titleLink := fmt.Sprintf("%v (https://myanimelist.net/anime/%v)", title, malid)
-		if id > 0 {
-			log.Printf("%v tvdbid found in db: %v\n", titleLink, id)
-		}
+		// if id > 0 {
+		// 	log.Printf("%v tvdbid found in db: %v\n", titleLink, id)
+		// }
 		if id <= 0 {
 			s, a, err := NewAnimeMaps()
 			if err != nil {

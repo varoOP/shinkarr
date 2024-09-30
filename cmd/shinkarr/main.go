@@ -170,7 +170,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Running omegabrr:")
+	fmt.Println("\nRunning omegabrr:")
 	om := omegabrr.NewOmegabrr(cfg.Omegabrr.ConfigPath, cfg.Omegabrr.ExecPath, season, seasonYear)
 	err = om.Run()
 	if err != nil {
