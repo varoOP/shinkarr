@@ -21,7 +21,9 @@ type Config struct {
 }
 
 type ShinkroConfig struct {
-	DBPath string `koanf:"DBPath"`
+	DBPath     string `koanf:"DBPath"`
+	ConfigPath string `koanf:"ConfigPath"`
+	EncryptionKey string
 }
 
 type SonarrConfig struct {
@@ -74,6 +76,7 @@ func NewConfig(dir string) *Config {
 	k.Unmarshal("omegabrr", &om)
 	s.BuildUrl()
 	r.BuildUrl()
+	sh.LoadEncryptionKey()
 
 	return &Config{
 		Sonarr:   &s,
@@ -109,6 +112,23 @@ func (r *RadarrConfig) BuildUrl() {
 	}
 
 	r.Url = url.JoinPath(r.BaseUrl)
+}
+
+func (sh *ShinkroConfig) LoadEncryptionKey() {
+	if sh.ConfigPath == "" {
+		log.Fatal("shinkro ConfigPath not set")
+	}
+
+	shinkroConfigPath := filepath.Join(sh.ConfigPath, "config.toml")
+	k := koanf.New(".")
+	if err := k.Load(file.Provider(shinkroConfigPath), toml.Parser()); err != nil {
+		log.Fatalf("failed to load shinkro config: %v", err)
+	}
+
+	sh.EncryptionKey = k.String("EncryptionKey")
+	if sh.EncryptionKey == "" {
+		log.Fatal("EncryptionKey not found in shinkro config.toml")
+	}
 }
 
 func DetectSeasonYear() (string, int) {

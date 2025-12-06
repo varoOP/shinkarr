@@ -1,7 +1,10 @@
 package database
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"strings"
@@ -25,26 +28,109 @@ func NewDB(DSN string) *DB {
 	return db
 }
 
-func (db *DB) GetMalCreds() map[string]string {
+func (db *DB) GetMalCreds(encryptionKey string) map[string]string {
 	var (
-		client_id     string
-		client_secret string
-		access_token  string
+		client_id     []byte
+		client_secret []byte
+		access_token  []byte
+		token_iv      []byte
 	)
 
-	sqlstmt := "SELECT client_id, client_secret, access_token from malauth;"
+	sqlstmt := "SELECT client_id, client_secret, access_token, token_iv from malauth;"
 
 	row := db.Handler.QueryRow(sqlstmt)
-	err := row.Scan(&client_id, &client_secret, &access_token)
+	err := row.Scan(&client_id, &client_secret, &access_token, &token_iv)
 	if err != nil {
 		check(err)
 	}
 
-	return map[string]string{
-		"client_id":     client_id,
-		"client_secret": client_secret,
-		"access_token":  access_token,
+	// Decrypt all fields using the encryption key and IV
+	var decryptedClientID, decryptedClientSecret, decryptedAccessToken string
+
+	if encryptionKey != "" {
+		// Decrypt client_id
+		if len(client_id) > 0 {
+			decrypted, err := decrypt(client_id, token_iv, encryptionKey)
+			if err != nil {
+				log.Fatalf("failed to decrypt client_id: %v", err)
+			}
+			decryptedClientID = string(decrypted)
+		}
+
+		// Decrypt client_secret
+		if len(client_secret) > 0 {
+			decrypted, err := decrypt(client_secret, token_iv, encryptionKey)
+			if err != nil {
+				log.Fatalf("failed to decrypt client_secret: %v", err)
+			}
+			decryptedClientSecret = string(decrypted)
+		}
+
+		// Decrypt access_token
+		if len(access_token) > 0 {
+			decrypted, err := decrypt(access_token, token_iv, encryptionKey)
+			if err != nil {
+				log.Fatalf("failed to decrypt access_token: %v", err)
+			}
+			decryptedAccessToken = string(decrypted)
+		}
+	} else {
+		// Fallback to plain text (backward compatibility)
+		decryptedClientID = string(client_id)
+		decryptedClientSecret = string(client_secret)
+		decryptedAccessToken = string(access_token)
 	}
+
+	return map[string]string{
+		"client_id":     decryptedClientID,
+		"client_secret": decryptedClientSecret,
+		"access_token":  decryptedAccessToken,
+	}
+}
+
+// decrypt matches shinkro's Decrypt function signature
+// It takes ciphertext and iv as separate byte slices, matching shinkro's implementation
+func decrypt(ciphertext, iv []byte, encryptionKey string) ([]byte, error) {
+	// Get and decode the encryption key
+	key, err := getEncryptionKey(encryptionKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create AES cipher
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AES cipher: %v", err)
+	}
+
+	// Create GCM mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM mode: %v", err)
+	}
+
+	// Decrypt using the provided IV
+	plaintext, err := gcm.Open(nil, iv, ciphertext, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt: %v", err)
+	}
+
+	return plaintext, nil
+}
+
+// getEncryptionKey matches shinkro's getEncryptionKey function
+// It decodes the encryption key from hex format and requires exactly 32 bytes
+func getEncryptionKey(encryptionKey string) ([]byte, error) {
+	key, err := hex.DecodeString(encryptionKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid hex encryption key: %v", err)
+	}
+
+	if len(key) != 32 {
+		return nil, fmt.Errorf("encryption key must be 32 bytes, got %d bytes", len(key))
+	}
+
+	return key, nil
 }
 
 func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
@@ -55,7 +141,7 @@ func (db *DB) GetIDs(malids []int32, dbtype string) (map[string]int32, error) {
 
 	m := map[string]int32{}
 	sqlstmt := fmt.Sprintf("SELECT title,%v_id from anime where mal_id=?", dbtype)
-	
+
 	tx, err := db.Handler.Begin()
 	if err != nil {
 		return nil, err

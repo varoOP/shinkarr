@@ -43,7 +43,7 @@ func main() {
 
 	dsn := cfg.Shinkro.DBPath + "?_pragma=busy_timeout%3d1000"
 	db := database.NewDB(dsn)
-	oc := maloauth.NewOauth2Client(db)
+	oc := maloauth.NewOauth2Client(db, cfg.Shinkro.EncryptionKey)
 	c := mal.NewClient(oc)
 
 	a, _, err := c.Anime.Seasonal(

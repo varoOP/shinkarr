@@ -10,9 +10,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func NewOauth2Client(db *database.DB) *http.Client {
+func NewOauth2Client(db *database.DB, encryptionKey string) *http.Client {
 	ctx := context.Background()
-	creds := db.GetMalCreds()
+	creds := db.GetMalCreds(encryptionKey)
 	cfg := &oauth2.Config{
 		ClientID:     creds["client_id"],
 		ClientSecret: creds["client_secret"],
